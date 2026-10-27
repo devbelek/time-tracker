@@ -6,3 +6,10 @@ data/
 *.db-wal
 *.db-shm
 .DS_Store
+.coverage
+htmlcov/
+coverage.txt
+.mypy_cache/
+.ruff_cache/
+.hypothesis/
+node_modules/

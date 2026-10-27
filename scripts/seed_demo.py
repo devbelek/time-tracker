@@ -4,13 +4,13 @@
 
 Если сотрудники уже есть, ничего не делает.
 """
-import os
+
 import time
 
-from app import service
+from app.config import Settings
 from app.db import connect, init_db
-
-DB_PATH = os.environ.get("TIMETRACKER_DB", "data/timetracker.db")
+from app.domain import name_key
+from app.repository import Repository
 
 EMPLOYEES = {
     "Анна Петрова": [
@@ -31,21 +31,23 @@ EMPLOYEES = {
 
 
 def main() -> None:
-    init_db(DB_PATH)
-    conn = connect(DB_PATH)
+    db_path = Settings.from_env().db_path
+    init_db(db_path)
+    conn = connect(db_path)
     try:
-        if conn.execute("SELECT 1 FROM employees LIMIT 1").fetchone():
+        repo = Repository(conn)
+        if repo.list_employees():
             print("В БД уже есть сотрудники, демо-данные не добавляю.")
             return
 
         now = int(time.time())
         for name, tasks in EMPLOYEES.items():
-            employee = service.add_employee(conn, name, now)
+            employee = repo.add_employee(name, name_key(name), now)
             # раскладываем задачи по прошлым дням, начиная с 9:00 «того» дня
             for day_back, (description, seconds) in enumerate(tasks, start=1):
                 start = now - day_back * 86400 - (now % 86400) + 9 * 3600
-                service.start_timer(conn, employee["id"], description, start)
-                service.stop_timer(conn, employee["id"], start + seconds)
+                repo.start_entry(employee.id, description, start)
+                repo.stop_running_entry(employee.id, start + seconds)
         print(f"Добавлено сотрудников: {len(EMPLOYEES)}")
     finally:
         conn.close()

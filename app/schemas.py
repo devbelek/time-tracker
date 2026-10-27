@@ -1,8 +1,9 @@
-"""Схемы запросов и ответов API."""
+"""Схемы запросов и ответов API (граница между HTTP и предметной областью)."""
+
 from datetime import datetime
 from typing import Annotated
 
-from pydantic import BaseModel, StringConstraints
+from pydantic import BaseModel, ConfigDict, StringConstraints
 
 Name = Annotated[str, StringConstraints(strip_whitespace=True, min_length=1, max_length=100)]
 Description = Annotated[str, StringConstraints(strip_whitespace=True, min_length=1, max_length=300)]
@@ -16,24 +17,30 @@ class TimerStart(BaseModel):
     description: Description
 
 
-class RunningTimer(BaseModel):
+class Out(BaseModel):
+    """Базовый класс ответов: умеет читать поля из dataclass-объектов предметной области."""
+
+    model_config = ConfigDict(from_attributes=True)
+
+
+class RunningTimerOut(Out):
     entry_id: int
     description: str
     started_at: datetime
 
 
-class EmployeeOut(BaseModel):
+class EmployeeOut(Out):
     id: int
     name: str
-    running: RunningTimer | None
+    running: RunningTimerOut | None
 
 
-class EmployeesOut(BaseModel):
+class EmployeesOut(Out):
     server_time: datetime  # чтобы фронтенд показывал время таймера по часам сервера
     employees: list[EmployeeOut]
 
 
-class EntryOut(BaseModel):
+class EntryOut(Out):
     id: int
     description: str
     started_at: datetime
@@ -41,15 +48,20 @@ class EntryOut(BaseModel):
     seconds: int  # сколько из этой записи попало в выбранный период
 
 
-class EmployeeReport(BaseModel):
+class EmployeeReportOut(Out):
     id: int
     name: str
     total_seconds: int
     entries: list[EntryOut]
 
 
-class ReportOut(BaseModel):
+class ReportOut(Out):
     period_from: datetime
     period_to: datetime
     total_seconds: int
-    employees: list[EmployeeReport]
+    employees: list[EmployeeReportOut]
+
+
+class HealthOut(BaseModel):
+    status: str
+    schema_version: int

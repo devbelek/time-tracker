@@ -1,36 +1,24 @@
-"""HTTP-слой: маршруты FastAPI и раздача фронтенда."""
-import os
+"""Точка сборки приложения: настройки, обработка ошибок, маршруты, фронтенд."""
+
+import logging
 import sqlite3
 import time
-from collections.abc import Callable
-from datetime import UTC, datetime
+from collections.abc import Awaitable, Callable
 from pathlib import Path
-from typing import Annotated
 
-from fastapi import Depends, FastAPI, Path as PathParam, Query, Request
+from fastapi import FastAPI, Request, Response
 from fastapi.exceptions import RequestValidationError
 from fastapi.responses import JSONResponse
 from fastapi.staticfiles import StaticFiles
-from pydantic import AwareDatetime
 
-from . import service
-from .db import connect, init_db
-from .schemas import (
-    EmployeeCreate,
-    EmployeeOut,
-    EmployeesOut,
-    EntryOut,
-    ReportOut,
-    RunningTimer,
-    TimerStart,
-)
+from . import api, domain
+from .config import Settings
+from .db import connect, init_db, schema_version
+from .repository import Repository
+from .schemas import HealthOut
+from .service import Clock
 
 STATIC_DIR = Path(__file__).parent / "static"
-DEFAULT_DB = "data/timetracker.db"
-
-# SQLite хранит целые в 64 битах; больший id вызвал бы ошибку 500 вместо «не найден»
-MAX_ID = 2**63 - 1
-EmployeeId = Annotated[int, PathParam(ge=1, le=MAX_ID)]
 
 FIELD_LABELS = {
     "name": "имя сотрудника",
@@ -40,81 +28,71 @@ FIELD_LABELS = {
     "employee_id": "сотрудник",
 }
 
+# Фронтенд раздаётся с этого же сервера и ничего не грузит снаружи, поэтому политика строгая.
+# Страницы /docs подгружают Swagger UI с CDN, для них политика не ставится.
+CSP = "default-src 'self'; img-src 'self' data:; base-uri 'none'; form-action 'self'; frame-ancestors 'none'"
+DOCS_PATHS = ("/docs", "/redoc", "/openapi.json")
 
-def create_app(db_path: str | Path | None = None, clock: Callable[[], int] | None = None) -> FastAPI:
+
+def create_app(settings: Settings | None = None, *, clock: Clock | None = None) -> FastAPI:
     """Фабрика приложения. `clock` возвращает unix-время в секундах; в тестах его подменяют."""
-    db_path = db_path or os.environ.get("TIMETRACKER_DB", DEFAULT_DB)
-    clock = clock or (lambda: int(time.time()))
-    init_db(db_path)
+    settings = settings or Settings.from_env()
+    logging.basicConfig(level=settings.log_level, format="%(asctime)s %(levelname)s %(name)s: %(message)s")
+    init_db(settings.db_path)
 
-    app = FastAPI(title="Учёт рабочего времени")
+    app = FastAPI(title="Учёт рабочего времени", version="1.0.0")
+    app.state.settings = settings
+    app.state.clock = clock or (lambda: int(time.time()))
 
-    def get_conn():
-        conn = connect(db_path)
-        try:
-            yield conn
-        finally:
-            conn.close()
+    # ---------- ошибки предметной области -> понятные JSON-ответы ----------
 
-    Conn = Annotated[sqlite3.Connection, Depends(get_conn)]
+    statuses: dict[type[Exception], int] = {
+        domain.NotFound: 404,
+        domain.Conflict: 409,
+        domain.InvalidPeriod: 422,
+    }
 
-    # ---------- ошибки -> понятные JSON-ответы ----------
-
-    @app.exception_handler(service.NotFound)
-    async def not_found(_: Request, exc: service.NotFound):
-        return JSONResponse({"detail": str(exc)}, status_code=404)
-
-    @app.exception_handler(service.Conflict)
-    async def conflict(_: Request, exc: service.Conflict):
-        return JSONResponse({"detail": str(exc)}, status_code=409)
-
-    @app.exception_handler(service.InvalidPeriod)
-    async def invalid_period(_: Request, exc: service.InvalidPeriod):
-        return JSONResponse({"detail": str(exc)}, status_code=422)
+    @app.exception_handler(domain.DomainError)
+    async def domain_error(_: Request, exc: Exception) -> JSONResponse:
+        return JSONResponse({"detail": str(exc)}, status_code=statuses.get(type(exc), 400))
 
     @app.exception_handler(RequestValidationError)
-    async def validation_error(_: Request, exc: RequestValidationError):
+    async def validation_error(_: Request, exc: Exception) -> JSONResponse:
+        assert isinstance(exc, RequestValidationError)
         # у битого JSON последний элемент loc это число (позиция в тексте), имени поля нет
-        labels = {FIELD_LABELS.get(e["loc"][-1], "формат запроса") for e in exc.errors()}
+        labels = {FIELD_LABELS.get(str(e["loc"][-1]), "формат запроса") for e in exc.errors()}
         return JSONResponse({"detail": "Проверьте поле: " + ", ".join(sorted(labels))}, status_code=422)
+
+    # ---------- заголовки безопасности ----------
+
+    @app.middleware("http")
+    async def security_headers(request: Request, call_next: Callable[[Request], Awaitable[Response]]) -> Response:
+        response = await call_next(request)
+        response.headers["X-Content-Type-Options"] = "nosniff"
+        response.headers["Referrer-Policy"] = "no-referrer"
+        if not request.url.path.startswith(DOCS_PATHS):
+            response.headers["Content-Security-Policy"] = CSP
+        if request.url.path.startswith("/api"):
+            response.headers["Cache-Control"] = "no-store"
+        return response
 
     # ---------- маршруты ----------
 
-    @app.get("/api/employees", response_model=EmployeesOut)
-    def list_employees(conn: Conn):
-        return {
-            "server_time": datetime.fromtimestamp(clock(), tz=UTC),
-            "employees": service.list_employees(conn),
-        }
+    app.include_router(api.router)
 
-    @app.post("/api/employees", response_model=EmployeeOut, status_code=201)
-    def add_employee(body: EmployeeCreate, conn: Conn):
-        return service.add_employee(conn, body.name, clock())
+    @app.get("/health", response_model=HealthOut, responses={503: {"description": "База данных недоступна"}})
+    def health() -> object:
+        """Проверка живости для Docker и мониторинга: реально обращается к базе."""
+        try:
+            conn = connect(settings.db_path)
+            try:
+                Repository(conn).ping()
+                return HealthOut(status="ok", schema_version=schema_version(conn))
+            finally:
+                conn.close()
+        except sqlite3.Error:
+            return JSONResponse({"status": "unavailable"}, status_code=503)
 
-    @app.post("/api/employees/{employee_id}/timer/start", response_model=RunningTimer, status_code=201)
-    def start_timer(employee_id: EmployeeId, body: TimerStart, conn: Conn):
-        return service.start_timer(conn, employee_id, body.description, clock())
-
-    @app.post("/api/employees/{employee_id}/timer/stop", response_model=EntryOut)
-    def stop_timer(employee_id: EmployeeId, conn: Conn):
-        return service.stop_timer(conn, employee_id, clock())
-
-    @app.get("/api/report", response_model=ReportOut)
-    def report(
-        conn: Conn,
-        period_from: Annotated[AwareDatetime, Query(alias="from")],
-        period_to: Annotated[AwareDatetime, Query(alias="to")],
-        employee_id: Annotated[int | None, Query(ge=1, le=MAX_ID)] = None,
-    ):
-        return service.build_report(
-            conn,
-            int(period_from.timestamp()),
-            int(period_to.timestamp()),
-            clock(),
-            employee_id,
-        )
-
-    # фронтенд; монтируем последним, чтобы не перекрыть /api
+    # фронтенд; монтируем последним, чтобы не перекрыть API
     app.mount("/", StaticFiles(directory=STATIC_DIR, html=True), name="static")
     return app
-
