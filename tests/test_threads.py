@@ -1,9 +1,10 @@
 """Регрессия: на живом сервере запросы падали с 500 из-за переноса соединения между потоками."""
+
 import threading
 from concurrent.futures import ThreadPoolExecutor
 
 from app.db import connect, init_db
-from conftest import T0, report
+from helpers import T0, report
 
 
 def test_connection_can_be_used_from_another_thread(db_path):

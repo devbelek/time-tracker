@@ -1,0 +1,9 @@
+{
+  "name": "time-tracker-frontend-tests",
+  "private": true,
+  "type": "module",
+  "description": "Только тесты чистой логики фронтенда (node --test). Зависимостей нет, сборки нет.",
+  "scripts": {
+    "test": "node --test \"tests-js/*.test.js\""
+  }
+}

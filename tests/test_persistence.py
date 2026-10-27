@@ -3,12 +3,13 @@ import sqlite3
 import pytest
 from fastapi.testclient import TestClient
 
+from app.config import Settings
 from app.main import create_app
-from conftest import T0, report
+from helpers import T0, report
 
 
 def test_data_survives_restart(db_path, clock):
-    first = TestClient(create_app(db_path, clock))
+    first = TestClient(create_app(Settings(db_path=db_path), clock=clock))
     anna = first.post("/api/employees", json={"name": "Анна Петрова"}).json()
     first.post(f"/api/employees/{anna['id']}/timer/start", json={"description": "Задача"})
     clock.advance(300)
@@ -16,7 +17,7 @@ def test_data_survives_restart(db_path, clock):
     first.post(f"/api/employees/{anna['id']}/timer/start", json={"description": "Ещё идёт"})
     del first  # «выключили» приложение
 
-    second = TestClient(create_app(db_path, clock))  # «включили» заново на том же файле БД
+    second = TestClient(create_app(Settings(db_path=db_path), clock=clock))  # «включили» заново на том же файле БД
     employees = second.get("/api/employees").json()["employees"]
     assert [e["name"] for e in employees] == ["Анна Петрова"]
     assert employees[0]["running"]["description"] == "Ещё идёт"  # запущенный таймер тоже пережил перезапуск

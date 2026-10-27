@@ -1,0 +1,32 @@
+[tool.pytest.ini_options]
+testpaths = ["tests"]
+pythonpath = [".", "tests"]
+markers = ["e2e: сквозные тесты в настоящем браузере (запускаются отдельно: make e2e)"]
+addopts = "-m 'not e2e' --cov --cov-report=term-missing:skip-covered"
+filterwarnings = ["ignore:Using .httpx. with .starlette.testclient. is deprecated"]
+
+[tool.coverage.run]
+source = ["app"]
+branch = true
+
+[tool.coverage.report]
+show_missing = true
+skip_covered = true
+fail_under = 95
+
+[tool.ruff]
+line-length = 120
+target-version = "py311"
+
+[tool.ruff.lint]
+select = ["E", "F", "I", "B", "UP", "SIM", "C4", "RUF", "PT"]
+# кириллица в строках и комментариях: правила про «похожие символы» дают только ложные срабатывания
+ignore = ["RUF001", "RUF002", "RUF003"]
+
+[tool.mypy]
+python_version = "3.11"
+strict = true
+files = ["app", "scripts"]
+
+[tool.ruff.lint.isort]
+known-first-party = ["app", "scripts", "helpers"]

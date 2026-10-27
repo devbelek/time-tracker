@@ -31,6 +31,7 @@ def test_malformed_requests_get_readable_errors_not_500(client):
     huge = 10**30  # не помещается в 64-битное целое SQLite
     assert client.post(f"/api/employees/{huge}/timer/stop").status_code == 422
     assert client.post(f"/api/employees/{huge}/timer/start", json={"description": "x"}).status_code == 422
-    assert client.get("/api/report", params={"from": "2023-11-14T00:00:00Z", "to": "2023-11-15T00:00:00Z", "employee_id": huge}).status_code == 422
+    period = {"from": "2023-11-14T00:00:00Z", "to": "2023-11-15T00:00:00Z"}
+    assert client.get("/api/report", params={**period, "employee_id": huge}).status_code == 422
     assert client.post("/api/employees/abc/timer/stop").status_code == 422
     assert client.post("/api/employees/0/timer/stop").status_code == 422
