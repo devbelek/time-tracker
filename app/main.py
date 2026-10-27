@@ -1,6 +1,7 @@
 """Точка сборки приложения: настройки, обработка ошибок, маршруты, фронтенд."""
 
 import logging
+import mimetypes
 import sqlite3
 import time
 from collections.abc import Awaitable, Callable
@@ -8,6 +9,7 @@ from pathlib import Path
 
 from fastapi import FastAPI, Request, Response
 from fastapi.exceptions import RequestValidationError
+from fastapi.middleware.gzip import GZipMiddleware
 from fastapi.responses import JSONResponse
 from fastapi.staticfiles import StaticFiles
 
@@ -19,6 +21,9 @@ from .schemas import HealthOut
 from .service import Clock
 
 STATIC_DIR = Path(__file__).parent / "static"
+
+# В минимальных образах (python:slim) тип .woff2 неизвестен, и шрифт отдавался бы как application/octet-stream
+mimetypes.add_type("font/woff2", ".woff2")
 
 FIELD_LABELS = {
     "name": "имя сотрудника",
@@ -62,6 +67,8 @@ def create_app(settings: Settings | None = None, *, clock: Clock | None = None) 
         # у битого JSON последний элемент loc это число (позиция в тексте), имени поля нет
         labels = {FIELD_LABELS.get(str(e["loc"][-1]), "формат запроса") for e in exc.errors()}
         return JSONResponse({"detail": "Проверьте поле: " + ", ".join(sorted(labels))}, status_code=422)
+
+    app.add_middleware(GZipMiddleware, minimum_size=1024)  # Bootstrap CSS: 232 КБ -> около 30 КБ
 
     # ---------- заголовки безопасности ----------
 
