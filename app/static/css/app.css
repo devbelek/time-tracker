@@ -1,0 +1,9 @@
+/* Всё основное даёт Bootstrap, здесь только мелкие дополнения. */
+.app-container { max-width: 960px; }
+
+/* цифры одной ширины, чтобы счётчик не «дрожал» */
+.timer { font-variant-numeric: tabular-nums; font-feature-settings: "tnum"; }
+
+details > summary { cursor: pointer; }
+
+.progress { height: 6px; }
