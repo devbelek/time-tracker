@@ -6,143 +6,122 @@
   <meta name="color-scheme" content="light dark">
   <title>Учёт рабочего времени</title>
   <link rel="icon" href="favicon.svg" type="image/svg+xml">
+  <link rel="preload" as="font" type="font/woff2" crossorigin href="vendor/fonts/ibm-plex-sans/ibm-plex-sans-cyrillic-400-normal.woff2">
+  <link rel="preload" as="font" type="font/woff2" crossorigin href="vendor/fonts/ibm-plex-sans/ibm-plex-sans-cyrillic-600-normal.woff2">
   <link rel="stylesheet" href="vendor/bootstrap/bootstrap.min.css">
-  <link rel="stylesheet" href="vendor/bootstrap-icons/bootstrap-icons.min.css">
+  <link rel="stylesheet" href="css/fonts.css">
   <link rel="stylesheet" href="css/app.css">
   <script src="js/theme.js"></script>
 </head>
-<body class="bg-body-tertiary">
-  <nav class="navbar bg-body border-bottom">
-    <div class="app-container container">
-      <span class="navbar-brand d-flex align-items-center gap-2 mb-0 h1 fs-5">
-        <i class="bi bi-stopwatch text-primary" aria-hidden="true"></i>
-        Учёт рабочего времени
-      </span>
-      <div class="d-flex align-items-center gap-3">
-        <span class="small text-body-secondary d-none d-sm-inline">Демо-данные вымышленные</span>
-        <button id="theme-toggle" type="button" class="btn btn-outline-secondary btn-sm" aria-label="Переключить тему">
-          <i class="bi bi-circle-half" aria-hidden="true"></i>
-        </button>
-      </div>
+<body>
+  <header class="site-header">
+    <div class="container d-flex align-items-center justify-content-between">
+      <h1 class="site-title">Учёт рабочего времени</h1>
+      <button id="theme-toggle" type="button" class="icon-btn" aria-label="Переключить тему">
+        <svg class="icon" viewBox="0 0 16 16" aria-hidden="true"><path d="M8 15A7 7 0 1 0 8 1zm0 1A8 8 0 1 1 8 0a8 8 0 0 1 0 16"/></svg>
+      </button>
     </div>
-  </nav>
+  </header>
 
-  <main class="app-container container py-4">
-    <div id="message" class="alert d-none" role="status" aria-live="polite"></div>
-
-    <section class="card shadow-sm mb-4" aria-labelledby="employees-title">
-      <div class="card-header d-flex align-items-center gap-2">
-        <i class="bi bi-people" aria-hidden="true"></i>
-        <h2 id="employees-title" class="h5 m-0">Сотрудники</h2>
-      </div>
-      <div class="card-body">
-        <form id="employee-form" class="input-group mb-3">
-          <input id="employee-name" type="text" class="form-control" maxlength="100" autocomplete="off"
-                 placeholder="Имя сотрудника" aria-label="Имя сотрудника">
-          <button type="submit" class="btn btn-primary"><i class="bi bi-person-plus" aria-hidden="true"></i> Добавить</button>
-        </form>
-        <ul id="employees" class="list-group"></ul>
-      </div>
-    </section>
-
-    <section class="card shadow-sm" aria-labelledby="report-title">
-      <div class="card-header d-flex align-items-center gap-2">
-        <i class="bi bi-bar-chart-line" aria-hidden="true"></i>
-        <h2 id="report-title" class="h5 m-0">Отчёт за период</h2>
-      </div>
-      <div class="card-body">
-        <form id="report-form" class="row g-2 align-items-end">
-          <div class="col-6 col-md-3">
-            <label class="form-label" for="from">С</label>
-            <input id="from" type="date" class="form-control" required>
-          </div>
-          <div class="col-6 col-md-3">
-            <label class="form-label" for="to">По</label>
-            <input id="to" type="date" class="form-control" required>
-          </div>
-          <div class="col-12 col-md-4">
-            <label class="form-label" for="report-employee">Сотрудник</label>
-            <select id="report-employee" class="form-select"><option value="">Все</option></select>
-          </div>
-          <div class="col-12 col-md-2 d-grid">
-            <button type="submit" class="btn btn-primary">Показать</button>
-          </div>
-        </form>
-        <div class="btn-group btn-group-sm mt-3" role="group" aria-label="Быстрый выбор периода">
-          <button type="button" class="btn btn-outline-secondary" data-range="today">Сегодня</button>
-          <button type="button" class="btn btn-outline-secondary" data-range="week">Эта неделя</button>
-          <button type="button" class="btn btn-outline-secondary" data-range="month">Этот месяц</button>
+  <main class="container py-4">
+    <div class="row g-4">
+      <section class="col-lg-5" aria-labelledby="employees-title">
+        <div class="panel">
+          <div class="panel-head"><h2 id="employees-title">Сотрудники</h2></div>
+          <form id="employee-form" class="add-form">
+            <input id="employee-name" type="text" class="form-control" maxlength="100" autocomplete="off"
+                   placeholder="Имя сотрудника" aria-label="Имя сотрудника">
+            <button type="submit" class="btn btn-ink">Добавить</button>
+          </form>
+          <ul id="employees" class="emp-list"></ul>
         </div>
-        <div id="report" class="mt-3" aria-live="polite"></div>
-      </div>
-    </section>
+      </section>
+
+      <section class="col-lg-7" aria-labelledby="report-title">
+        <div class="panel">
+          <div class="panel-head"><h2 id="report-title">Отчёт за период</h2></div>
+          <div class="panel-body">
+            <form id="report-form" class="row g-2 align-items-end">
+              <div class="col-6 col-sm-3">
+                <label class="form-label" for="from">С</label>
+                <input id="from" type="date" class="form-control" required>
+              </div>
+              <div class="col-6 col-sm-3">
+                <label class="form-label" for="to">По</label>
+                <input id="to" type="date" class="form-control" required>
+              </div>
+              <div class="col-12 col-sm-4">
+                <label class="form-label" for="report-employee">Сотрудник</label>
+                <select id="report-employee" class="form-select"><option value="">Все</option></select>
+              </div>
+              <div class="col-12 col-sm-2 d-grid">
+                <button type="submit" class="btn btn-ink">Показать</button>
+              </div>
+            </form>
+            <div class="chips" role="group" aria-label="Быстрый выбор периода">
+              <button type="button" class="chip" data-range="today" aria-pressed="false">Сегодня</button>
+              <button type="button" class="chip" data-range="week" aria-pressed="false">Эта неделя</button>
+              <button type="button" class="chip" data-range="month" aria-pressed="false">Этот месяц</button>
+            </div>
+            <div id="report" aria-live="polite"></div>
+          </div>
+        </div>
+      </section>
+    </div>
   </main>
+
+  <footer class="container site-footer">Тестовое задание. Все данные вымышленные.</footer>
+
+  <div id="message" class="alert toast-msg d-none" role="status" aria-live="polite"></div>
 
   <!-- Шаблоны: разметка живёт здесь, а JS только подставляет данные -->
   <template id="tpl-employees-empty">
-    <li class="list-group-item text-center text-body-secondary py-4">
-      <i class="bi bi-person-plus fs-3 d-block" aria-hidden="true"></i>
-      Пока никого нет. Добавьте первого сотрудника.
-    </li>
+    <li class="empty">Пока никого нет. Добавьте первого сотрудника.</li>
   </template>
 
   <template id="tpl-employee-idle">
-    <li class="list-group-item">
-      <div class="fw-semibold mb-2" data-field="name"></div>
-      <form class="input-group" data-field="form">
-        <input type="text" class="form-control" maxlength="300" autocomplete="off"
+    <li class="emp">
+      <form class="emp-row" data-field="form">
+        <div class="emp-name" data-field="name"></div>
+        <input type="text" class="form-control form-control-sm" maxlength="300" autocomplete="off"
                placeholder="Над чем работаете?" data-field="task">
-        <button type="submit" class="btn btn-primary"><i class="bi bi-play-fill" aria-hidden="true"></i> Старт</button>
+        <button type="submit" class="btn btn-ink btn-sm"><svg class="icon" viewBox="0 0 16 16" aria-hidden="true"><path d="m11.596 8.697-6.363 3.692c-.54.313-1.233-.066-1.233-.697V4.308c0-.63.692-1.01 1.233-.696l6.363 3.692a.802.802 0 0 1 0 1.393"/></svg> Старт</button>
       </form>
     </li>
   </template>
 
   <template id="tpl-employee-running">
-    <li class="list-group-item list-group-item-success">
-      <div class="d-flex flex-wrap align-items-center gap-3">
-        <div class="me-auto">
-          <div class="fw-semibold" data-field="name"></div>
-          <div class="small text-break" data-field="task"></div>
+    <li class="emp emp-running">
+      <div class="emp-row">
+        <div class="emp-who">
+          <div class="emp-name">
+            <span class="live-dot" aria-hidden="true"></span><span data-field="name"></span><span class="visually-hidden">. Идёт</span>
+          </div>
+          <div class="emp-task" data-field="task"></div>
         </div>
-        <span class="badge text-bg-success"><i class="bi bi-record-circle" aria-hidden="true"></i> Идёт</span>
-        <span class="fs-4 fw-semibold timer" data-field="timer">0:00:00</span>
-        <button type="button" class="btn btn-danger" data-field="stop">
-          <i class="bi bi-stop-fill" aria-hidden="true"></i> Остановить
+        <span class="timer emp-timer" data-field="timer">0:00:00</span>
+        <button type="button" class="btn btn-stop btn-sm" data-field="stop">
+          <svg class="icon" viewBox="0 0 16 16" aria-hidden="true"><path d="M5 3.5h6A1.5 1.5 0 0 1 12.5 5v6a1.5 1.5 0 0 1-1.5 1.5H5A1.5 1.5 0 0 1 3.5 11V5A1.5 1.5 0 0 1 5 3.5"/></svg> Остановить
         </button>
       </div>
     </li>
   </template>
 
   <template id="tpl-report-no-employees">
-    <p class="text-center text-body-secondary py-3 mb-0">
-      <i class="bi bi-inbox fs-3 d-block" aria-hidden="true"></i>
-      Сотрудников пока нет, отчёт строить не из чего.
-    </p>
+    <p class="empty">Сотрудников пока нет, отчёт строить не из чего.</p>
   </template>
 
   <template id="tpl-report">
     <div>
-      <div class="row row-cols-1 row-cols-sm-3 g-2 mb-3">
-        <div class="col"><div class="border rounded p-3 bg-body">
-          <div class="small text-body-secondary">Всего времени</div>
-          <div class="fs-4 fw-semibold timer" data-field="total"></div>
-        </div></div>
-        <div class="col"><div class="border rounded p-3 bg-body">
-          <div class="small text-body-secondary">Сотрудников с записями</div>
-          <div class="fs-4 fw-semibold" data-field="active"></div>
-        </div></div>
-        <div class="col"><div class="border rounded p-3 bg-body">
-          <div class="small text-body-secondary">Записей</div>
-          <div class="fs-4 fw-semibold" data-field="entries"></div>
-        </div></div>
+      <div class="summary">
+        <div class="summary-total timer" data-field="total"></div>
+        <div class="summary-caption">всего за период, <span data-field="entries"></span></div>
       </div>
-      <div class="table-responsive">
-        <table class="table align-middle mb-0">
-          <thead><tr><th scope="col">Сотрудник</th><th scope="col" class="text-end">Всего</th></tr></thead>
-          <tbody data-field="rows"></tbody>
-        </table>
-      </div>
-      <p class="small text-body-secondary mt-2 mb-0" data-field="note"></p>
+      <table class="table report-table mb-0">
+        <thead class="visually-hidden"><tr><th scope="col">Сотрудник</th><th scope="col">Всего</th></tr></thead>
+        <tbody data-field="rows"></tbody>
+      </table>
+      <p class="note" data-field="note"></p>
     </div>
   </template>
 
@@ -150,29 +129,29 @@
     <tr>
       <td>
         <details>
-          <summary class="fw-semibold" data-field="name"></summary>
-          <ul class="list-unstyled small mt-2 mb-0" data-field="entries"></ul>
+          <summary><span data-field="name"></span><span class="count" data-field="count"></span></summary>
+          <ul class="entries" data-field="entries"></ul>
         </details>
-        <div class="progress mt-2" role="progressbar" aria-label="Доля от общего времени" aria-valuemin="0" aria-valuemax="100" data-field="progress">
+        <div class="progress" role="progressbar" aria-label="Доля от общего времени" aria-valuemin="0" aria-valuemax="100" data-field="progress">
           <div class="progress-bar" data-field="bar"></div>
         </div>
       </td>
-      <td class="text-end fw-semibold timer" data-field="total"></td>
+      <td class="timer total-cell" data-field="total"></td>
     </tr>
   </template>
 
   <template id="tpl-entry">
-    <li class="d-flex justify-content-between gap-3 py-2 border-top">
+    <li class="entry">
       <div>
         <div data-field="task"></div>
-        <div class="text-body-secondary" data-field="when"></div>
+        <div class="when" data-field="when"></div>
       </div>
       <span class="timer" data-field="seconds"></span>
     </li>
   </template>
 
   <template id="tpl-entries-empty">
-    <li class="text-body-secondary">Записей за период нет</li>
+    <li class="when">Записей за период нет</li>
   </template>
 
   <script type="module" src="js/main.js"></script>

@@ -8,10 +8,36 @@ export function formatDuration(totalSeconds) {
   return `${Math.floor(s / 3600)}:${pad2(Math.floor((s % 3600) / 60))}:${pad2(s % 60)}`;
 }
 
-/** ISO-строка -> дата и время в местном часовом поясе */
-export function formatDateTime(iso) {
-  return new Date(iso).toLocaleString("ru-RU", { dateStyle: "short", timeStyle: "medium" });
+const DATE_TIME = { day: "2-digit", month: "2-digit", year: "numeric", hour: "2-digit", minute: "2-digit" };
+const TIME = { hour: "2-digit", minute: "2-digit" };
+
+/**
+ * Промежуток записи по местному времени: "25.10.2026, 15:00 → 15:50".
+ * Если запись закончилась в другой день, дата пишется у обоих концов. Идущая: "… → идёт сейчас". Вокруг стрелки неразрывные пробелы, чтобы она не отрывалась от значений.
+ */
+export function formatRange(startIso, stopIso) {
+  const start = new Date(startIso);
+  const head = start.toLocaleString("ru-RU", DATE_TIME);
+  if (!stopIso) return `${head}\u00a0→\u00a0идёт сейчас`;
+  const stop = new Date(stopIso);
+  const tail =
+    start.toDateString() === stop.toDateString()
+      ? stop.toLocaleTimeString("ru-RU", TIME)
+      : stop.toLocaleString("ru-RU", DATE_TIME);
+  return `${head}\u00a0→\u00a0${tail}`;
 }
+
+/** Склонение по числу: plural(2, ["запись", "записи", "записей"]) -> "записи" */
+export function plural(n, [one, few, many]) {
+  const lastTwo = Math.abs(n) % 100;
+  const last = lastTwo % 10;
+  if (lastTwo > 10 && lastTwo < 20) return many;
+  if (last === 1) return one;
+  if (last >= 2 && last <= 4) return few;
+  return many;
+}
+
+export const entriesLabel = (n) => `${n} ${plural(n, ["запись", "записи", "записей"])}`;
 
 /** Date -> "YYYY-MM-DD" по местному календарю (значение для <input type="date">) */
 export function toDateInput(date) {

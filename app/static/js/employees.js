@@ -51,6 +51,7 @@ function runningCard(employee) {
   const li = cloneTemplate("tpl-employee-running");
   setText(li, "name", employee.name);
   setText(li, "task", employee.running.description);
+  field(li, "task").title = employee.running.description; // в строке текст обрезается до двух строк
   field(li, "timer").dataset.started = employee.running.started_at;
   field(li, "stop").addEventListener("click", () => stopTimer(employee.id));
   return li;

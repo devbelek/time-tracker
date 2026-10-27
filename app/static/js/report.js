@@ -2,7 +2,7 @@
 
 import { api } from "./api.js";
 import { $, cloneTemplate, field, setText, showMessage } from "./dom.js";
-import { dayRangeToIso, formatDateTime, formatDuration, percentOf, presetRange } from "./format.js";
+import { dayRangeToIso, entriesLabel, formatDuration, formatRange, percentOf, presetRange } from "./format.js";
 
 export function initReport() {
   $("#report-form").addEventListener("submit", (event) => {
@@ -16,6 +16,8 @@ export function initReport() {
       loadReport();
     });
   }
+  // ручной выбор дат снимает подсветку быстрого периода
+  for (const id of ["#from", "#to"]) $(id).addEventListener("input", () => markActiveRange(null));
   setRange("today");
 }
 
@@ -23,14 +25,20 @@ function setRange(kind) {
   const { from, to } = presetRange(kind);
   $("#from").value = from;
   $("#to").value = to;
+  markActiveRange(kind);
+}
+
+function markActiveRange(kind) {
+  for (const button of document.querySelectorAll("[data-range]")) {
+    button.setAttribute("aria-pressed", String(button.dataset.range === kind));
+  }
 }
 
 /** Обновляет выпадающий список «Сотрудник», сохраняя текущий выбор */
 export function setEmployeeOptions(employees) {
   const select = $("#report-employee");
   const selected = select.value;
-  const all = new Option("Все", "");
-  select.replaceChildren(all, ...employees.map((e) => new Option(e.name, e.id)));
+  select.replaceChildren(new Option("Все", ""), ...employees.map((e) => new Option(e.name, e.id)));
   select.value = employees.some((e) => String(e.id) === selected) ? selected : "";
 }
 
@@ -68,8 +76,7 @@ function renderReport(report) {
 
   const entriesCount = report.employees.reduce((sum, e) => sum + e.entries.length, 0);
   setText(root, "total", formatDuration(report.total_seconds));
-  setText(root, "active", report.employees.filter((e) => e.entries.length > 0).length);
-  setText(root, "entries", entriesCount);
+  setText(root, "entries", entriesLabel(entriesCount));
   setText(
     root,
     "note",
@@ -84,6 +91,7 @@ function reportRow(employee, totalSeconds) {
   const row = cloneTemplate("tpl-report-row");
   setText(row, "name", employee.name);
   setText(row, "total", formatDuration(employee.total_seconds));
+  setText(row, "count", employee.entries.length ? entriesLabel(employee.entries.length) : "нет записей");
 
   const percent = percentOf(employee.total_seconds, totalSeconds);
   field(row, "progress").setAttribute("aria-valuenow", percent);
@@ -98,8 +106,7 @@ function reportRow(employee, totalSeconds) {
 function entryItem(entry) {
   const item = cloneTemplate("tpl-entry");
   setText(item, "task", entry.description);
-  const end = entry.stopped_at ? formatDateTime(entry.stopped_at) : "идёт сейчас";
-  setText(item, "when", `${formatDateTime(entry.started_at)} → ${end}`);
+  setText(item, "when", formatRange(entry.started_at, entry.stopped_at));
   setText(item, "seconds", formatDuration(entry.seconds));
   return item;
 }

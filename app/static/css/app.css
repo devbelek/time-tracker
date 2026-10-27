@@ -1,9 +1,426 @@
-/* Всё основное даёт Bootstrap, здесь только мелкие дополнения. */
-.app-container { max-width: 960px; }
+/*
+ * Основу даёт Bootstrap 5 (сетка, формы, кнопки, таблица, прогресс). Здесь только настройка его
+ * через CSS-переменные: палитра, шрифт, форма кнопок, а также несколько своих компонентов.
+ * Цвет в интерфейсе один: «идёт» (красно-оранжевая точка). Остальное оттенки чернил и бумаги.
+ */
+
+/* ---------- палитра ---------- */
+
+:root,
+[data-bs-theme="light"] {
+  --tt-bg: #f5f4f0;
+  --tt-surface: #ffffff;
+  --tt-input-bg: #ffffff;
+  --tt-ink: #17181c;
+  --tt-ink-hover: #3a3c44;
+  --tt-on-ink: #ffffff;
+  --tt-muted: #666770;
+  --tt-border: #e4e2db;
+  --tt-live: #d63a0f;
+  --tt-on-live: #ffffff;
+  --tt-focus: rgba(23, 24, 28, 0.16);
+}
+
+[data-bs-theme="dark"] {
+  --tt-bg: #111214;
+  --tt-surface: #18191c;
+  --tt-input-bg: #1f2024;
+  --tt-ink: #ececee;
+  --tt-ink-hover: #ffffff;
+  --tt-on-ink: #111214;
+  --tt-muted: #9b9ca5;
+  --tt-border: #2b2c31;
+  --tt-live: #ff6a45;
+  --tt-on-live: #111214;
+  --tt-focus: rgba(236, 236, 238, 0.22);
+}
+
+:root,
+[data-bs-theme="light"],
+[data-bs-theme="dark"] {
+  --bs-body-font-family: "IBM Plex Sans", system-ui, -apple-system, "Segoe UI", sans-serif;
+  --bs-body-font-size: 0.9375rem;
+  --bs-body-bg: var(--tt-bg);
+  --bs-body-color: var(--tt-ink);
+  --bs-secondary-color: var(--tt-muted);
+  --bs-border-color: var(--tt-border);
+  --bs-border-radius: 0.4rem;
+}
+
+body {
+  -webkit-font-smoothing: antialiased;
+}
+
+/* три значка (из Bootstrap Icons) вставлены в разметку как SVG: шрифт иконок ради них не нужен */
+.icon {
+  width: 1em;
+  height: 1em;
+  vertical-align: -0.125em;
+  fill: currentColor;
+}
+
+/* ---------- шапка и подвал ---------- */
+
+.site-header {
+  background: var(--tt-surface);
+  border-bottom: 1px solid var(--tt-border);
+}
+.site-header .container {
+  height: 3.25rem;
+}
+.site-title {
+  margin: 0;
+  font-size: 1rem;
+  font-weight: 600;
+  letter-spacing: 0.01em;
+}
+.icon-btn {
+  width: 2rem;
+  height: 2rem;
+  padding: 0;
+  color: inherit;
+  background: transparent;
+  border: 1px solid var(--tt-border);
+  border-radius: var(--bs-border-radius);
+}
+.icon-btn:hover {
+  background: var(--tt-bg);
+}
+.site-footer {
+  padding-bottom: 1.5rem;
+  color: var(--tt-muted);
+  font-size: 0.8rem;
+}
+
+/* ---------- панели ---------- */
+
+.panel {
+  background: var(--tt-surface);
+  border: 1px solid var(--tt-border);
+  border-radius: 0.6rem;
+}
+.panel-head {
+  padding: 1.1rem 1.25rem 0.4rem;
+}
+.panel-head h2 {
+  margin: 0;
+  font-size: 1rem;
+  font-weight: 600;
+}
+.panel-body {
+  padding: 0.5rem 1.25rem 1.25rem;
+}
+.empty {
+  padding: 1rem 0;
+  color: var(--tt-muted);
+  list-style: none;
+  margin: 0;
+}
+
+/* ---------- кнопки и поля (Bootstrap через его же переменные) ---------- */
+
+.btn {
+  --bs-btn-font-weight: 500;
+}
+.btn-ink {
+  --bs-btn-color: var(--tt-on-ink);
+  --bs-btn-bg: var(--tt-ink);
+  --bs-btn-border-color: var(--tt-ink);
+  --bs-btn-hover-color: var(--tt-on-ink);
+  --bs-btn-hover-bg: var(--tt-ink-hover);
+  --bs-btn-hover-border-color: var(--tt-ink-hover);
+  --bs-btn-active-color: var(--tt-on-ink);
+  --bs-btn-active-bg: var(--tt-ink-hover);
+  --bs-btn-active-border-color: var(--tt-ink-hover);
+  --bs-btn-focus-shadow-rgb: 128, 128, 140;
+}
+.btn-stop {
+  --bs-btn-color: var(--tt-live);
+  --bs-btn-bg: transparent;
+  --bs-btn-border-color: var(--tt-live);
+  --bs-btn-hover-color: #ffffff;
+  --bs-btn-hover-bg: var(--tt-live);
+  --bs-btn-hover-border-color: var(--tt-live);
+  --bs-btn-active-color: #ffffff;
+  --bs-btn-active-bg: var(--tt-live);
+  --bs-btn-active-border-color: var(--tt-live);
+  --bs-btn-focus-shadow-rgb: 214, 58, 15;
+}
+
+.form-control,
+.form-select {
+  color: var(--tt-ink);
+  background-color: var(--tt-input-bg);
+  border-color: var(--tt-border);
+}
+.form-control::placeholder {
+  color: var(--tt-muted);
+  opacity: 1;
+}
+.form-control:focus,
+.form-select:focus {
+  color: var(--tt-ink);
+  background-color: var(--tt-input-bg);
+  border-color: var(--tt-ink);
+  box-shadow: 0 0 0 0.2rem var(--tt-focus);
+}
+.form-label {
+  margin-bottom: 0.25rem;
+  color: var(--tt-muted);
+  font-size: 0.8125rem;
+}
+
+/* ---------- сотрудники ---------- */
+
+.add-form {
+  display: flex;
+  gap: 0.5rem;
+  padding: 0.5rem 1.25rem 1rem;
+}
+.emp-list {
+  margin: 0;
+  padding: 0 1.25rem 0.5rem;
+  list-style: none;
+}
+.emp {
+  position: relative;
+  padding: 0.75rem 0;
+  border-top: 1px solid var(--tt-border);
+}
+.emp-row {
+  display: grid;
+  grid-template-columns: minmax(0, 9.75rem) minmax(0, 1fr) auto;
+  gap: 0.6rem;
+  align-items: center;
+  margin: 0;
+}
+.emp-name {
+  font-weight: 600;
+  overflow-wrap: anywhere;
+}
+.emp-task {
+  display: -webkit-box;
+  overflow: hidden;
+  color: var(--tt-muted);
+  font-size: 0.875rem;
+  overflow-wrap: anywhere;
+  line-clamp: 2;
+  -webkit-line-clamp: 2;
+  -webkit-box-orient: vertical;
+}
+
+/* идущий таймер: тонкая полоса слева, мигающая точка и крупные цифры, без заливки строки */
+.emp-running {
+  padding-top: 0.9rem;
+  padding-bottom: 0.9rem;
+}
+.emp-running::before {
+  content: "";
+  position: absolute;
+  top: -1px;
+  bottom: 0;
+  left: -1.25rem;
+  width: 3px;
+  background: var(--tt-live);
+}
+.emp-running .emp-row {
+  grid-template-columns: minmax(0, 1fr) auto auto;
+}
+.emp-timer {
+  font-size: 1.25rem;
+  font-weight: 600;
+}
+.live-dot {
+  display: inline-block;
+  width: 0.5rem;
+  height: 0.5rem;
+  margin-right: 0.5rem;
+  vertical-align: 0.1em;
+  background: var(--tt-live);
+  border-radius: 50%;
+  animation: pulse 1.6s ease-in-out infinite;
+}
+@keyframes pulse {
+  50% {
+    opacity: 0.3;
+  }
+}
+@media (prefers-reduced-motion: reduce) {
+  .live-dot {
+    animation: none;
+  }
+}
 
 /* цифры одной ширины, чтобы счётчик не «дрожал» */
-.timer { font-variant-numeric: tabular-nums; font-feature-settings: "tnum"; }
+.timer {
+  font-variant-numeric: tabular-nums;
+  font-feature-settings: "tnum";
+}
 
-details > summary { cursor: pointer; }
+/* ---------- отчёт ---------- */
 
-.progress { height: 6px; }
+.chips {
+  display: flex;
+  gap: 0.25rem;
+  margin: 0.75rem 0 1.25rem;
+}
+.chip {
+  padding: 0.2rem 0.65rem;
+  color: var(--tt-muted);
+  font-weight: 500;
+  background: transparent;
+  border: 1px solid transparent;
+  border-radius: var(--bs-border-radius);
+}
+.chip:hover {
+  color: var(--tt-ink);
+  border-color: var(--tt-border);
+}
+.chip[aria-pressed="true"] {
+  color: var(--tt-on-ink);
+  background: var(--tt-ink);
+}
+
+.summary {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: baseline;
+  gap: 0.25rem 0.75rem;
+  margin-bottom: 0.75rem;
+}
+.summary-total {
+  font-size: 2.1rem;
+  font-weight: 600;
+  line-height: 1.1;
+  letter-spacing: -0.01em;
+}
+.summary-caption {
+  color: var(--tt-muted);
+}
+
+.report-table {
+  --bs-table-bg: transparent;
+  --bs-table-color: inherit;
+  --bs-table-border-color: var(--tt-border);
+  border-top: 1px solid var(--tt-border);
+}
+.report-table td {
+  padding: 0.8rem 0;
+  vertical-align: top;
+  border-bottom: 1px solid var(--tt-border);
+}
+.report-table td:first-child {
+  padding-right: 1rem;
+}
+.report-table tbody tr:last-child td {
+  border-bottom: 0;
+}
+.total-cell {
+  font-weight: 600;
+  text-align: right;
+  white-space: nowrap;
+}
+
+details > summary {
+  display: flex;
+  align-items: center;
+  font-weight: 600;
+  cursor: pointer;
+  list-style: none;
+}
+details > summary::-webkit-details-marker {
+  display: none;
+}
+details > summary::before {
+  content: "";
+  width: 0.4rem;
+  height: 0.4rem;
+  margin-right: 0.7rem;
+  border-right: 2px solid var(--tt-muted);
+  border-bottom: 2px solid var(--tt-muted);
+  transform: rotate(-45deg);
+  transition: transform 0.15s;
+}
+details[open] > summary::before {
+  transform: rotate(45deg);
+}
+.count {
+  flex-shrink: 0;
+  margin-left: 0.6rem;
+  white-space: nowrap;
+  color: var(--tt-muted);
+  font-size: 0.8125rem;
+  font-weight: 400;
+}
+
+.progress {
+  --bs-progress-height: 4px;
+  --bs-progress-bg: var(--tt-border);
+  --bs-progress-bar-bg: var(--tt-ink);
+  --bs-progress-border-radius: 2px;
+  margin-top: 0.6rem;
+}
+
+.entries {
+  margin: 0.6rem 0 0.2rem;
+  padding: 0;
+  font-size: 0.875rem;
+  list-style: none;
+}
+.entry {
+  display: flex;
+  justify-content: space-between;
+  gap: 1rem;
+  padding: 0.5rem 0;
+  border-top: 1px dashed var(--tt-border);
+}
+.when {
+  color: var(--tt-muted);
+}
+.note {
+  margin: 0.75rem 0 0;
+  color: var(--tt-muted);
+  font-size: 0.8125rem;
+}
+
+/* ---------- сообщение: поверх страницы, чтобы не сдвигать вёрстку ---------- */
+
+.toast-msg {
+  position: fixed;
+  bottom: 1.25rem;
+  left: 50%;
+  z-index: 1080;
+  max-width: min(32rem, calc(100vw - 2rem));
+  margin: 0;
+  cursor: pointer;
+  transform: translateX(-50%);
+  border: 0;
+  border-radius: 0.5rem;
+  box-shadow: 0 6px 24px rgba(0, 0, 0, 0.18);
+}
+.toast-msg.alert-success {
+  --bs-alert-color: var(--tt-on-ink);
+  --bs-alert-bg: var(--tt-ink);
+}
+.toast-msg.alert-danger {
+  --bs-alert-color: var(--tt-on-live);
+  --bs-alert-bg: var(--tt-live);
+}
+
+/* ---------- узкие экраны ---------- */
+
+@media (max-width: 575.98px) {
+  .emp-row {
+    grid-template-columns: minmax(0, 1fr) auto;
+  }
+  .emp-row > .emp-name,
+  .emp-who {
+    grid-column: 1 / -1;
+  }
+  .emp-running .emp-row {
+    grid-template-columns: minmax(0, 1fr) auto;
+  }
+  .summary-total {
+    font-size: 1.8rem;
+  }
+}

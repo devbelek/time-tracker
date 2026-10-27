@@ -18,16 +18,22 @@ export function setText(root, name, text) {
 }
 
 let hideTimer;
+const box = () => $("#message");
 
-/** Сообщение над формами. Успех гаснет сам, ошибка висит до следующего действия. */
+function hideMessage() {
+  box().classList.add("d-none");
+}
+
+/** Сообщение поверх страницы. Успех гаснет сам, ошибка висит до следующего действия или клика по ней. */
 export function showMessage(text, kind = "success") {
-  const box = $("#message");
   clearTimeout(hideTimer);
   if (!text) {
-    box.classList.add("d-none");
+    hideMessage();
     return;
   }
-  box.textContent = text;
-  box.className = `alert alert-${kind}`;
-  if (kind === "success") hideTimer = setTimeout(() => box.classList.add("d-none"), 6000);
+  box().textContent = text;
+  box().className = `alert alert-${kind} toast-msg`;
+  if (kind === "success") hideTimer = setTimeout(hideMessage, 6000);
 }
+
+box().addEventListener("click", hideMessage);
