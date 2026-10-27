@@ -1,0 +1,48 @@
+<!doctype html>
+<html lang="ru">
+<head>
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1">
+  <title>Учёт рабочего времени</title>
+  <link rel="stylesheet" href="style.css">
+</head>
+<body>
+  <header class="top">
+    <h1>Учёт рабочего времени</h1>
+    <p class="hint">Демо-данные вымышленные</p>
+  </header>
+
+  <main>
+    <div id="message" class="message" role="status" hidden></div>
+
+    <section aria-labelledby="employees-title">
+      <h2 id="employees-title">Сотрудники</h2>
+      <form id="employee-form" class="row">
+        <input id="employee-name" type="text" maxlength="100" placeholder="Имя сотрудника" aria-label="Имя сотрудника" autocomplete="off">
+        <button type="submit">Добавить</button>
+      </form>
+      <ul id="employees" class="cards"></ul>
+    </section>
+
+    <section aria-labelledby="report-title">
+      <h2 id="report-title">Отчёт за период</h2>
+      <form id="report-form" class="row wrap">
+        <label>С <input id="from" type="date" required></label>
+        <label>По <input id="to" type="date" required></label>
+        <label>Сотрудник
+          <select id="report-employee"><option value="">Все</option></select>
+        </label>
+        <button type="submit">Показать</button>
+      </form>
+      <div class="quick">
+        <button type="button" class="link" data-range="today">Сегодня</button>
+        <button type="button" class="link" data-range="week">Эта неделя</button>
+        <button type="button" class="link" data-range="month">Этот месяц</button>
+      </div>
+      <div id="report"></div>
+    </section>
+  </main>
+
+  <script src="app.js"></script>
+</body>
+</html>
