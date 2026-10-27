@@ -3,8 +3,11 @@ import { test } from "node:test";
 
 import {
   dayRangeToIso,
+  entriesLabel,
   formatDuration,
+  formatRange,
   percentOf,
+  plural,
   presetRange,
   toDateInput,
 } from "../app/static/js/format.js";
@@ -98,4 +101,44 @@ test("percentOf: деление на ноль и округление", () => {
   assert.equal(percentOf(1, 3), 33);
   assert.equal(percentOf(2, 3), 67);
   assert.equal(percentOf(5, 5), 100);
+});
+
+const NBSP_ARROW = "\u00a0→\u00a0";
+
+test("formatRange: в пределах суток дата пишется один раз", () => {
+  const text = inTimezone("Asia/Bishkek", () => formatRange("2026-10-25T09:00:00Z", "2026-10-25T09:50:00Z"));
+  assert.equal(text, `25.10.2026, 15:00${NBSP_ARROW}15:50`);
+});
+
+test("formatRange: запись через полночь показывает дату у обоих концов", () => {
+  const text = inTimezone("Asia/Bishkek", () => formatRange("2026-03-09T17:00:00Z", "2026-03-09T19:00:00Z"));
+  assert.equal(text, `09.03.2026, 23:00${NBSP_ARROW}10.03.2026, 01:00`);
+});
+
+test("formatRange: идущая запись", () => {
+  const text = inTimezone("UTC", () => formatRange("2026-10-25T09:00:00Z", null));
+  assert.equal(text, `25.10.2026, 09:00${NBSP_ARROW}идёт сейчас`);
+});
+
+test("formatRange: стрелка не отрывается от значений при переносе строки", () => {
+  const text = inTimezone("UTC", () => formatRange("2026-10-25T09:00:00Z", "2026-10-25T09:50:00Z"));
+  assert.ok(!text.includes(" →") && !text.includes("→ "), "вокруг стрелки только неразрывные пробелы");
+});
+
+test("plural: русские формы по числу", () => {
+  const forms = ["запись", "записи", "записей"];
+  const expected = {
+    0: "записей", 1: "запись", 2: "записи", 4: "записи", 5: "записей", 10: "записей",
+    11: "записей", 12: "записей", 14: "записей", 21: "запись", 22: "записи", 25: "записей",
+    101: "запись", 111: "записей", 112: "записей", 121: "запись",
+  };
+  for (const [n, form] of Object.entries(expected)) {
+    assert.equal(plural(Number(n), forms), form, `n=${n}`);
+  }
+});
+
+test("entriesLabel: число вместе со словом", () => {
+  assert.equal(entriesLabel(1), "1 запись");
+  assert.equal(entriesLabel(3), "3 записи");
+  assert.equal(entriesLabel(8), "8 записей");
 });

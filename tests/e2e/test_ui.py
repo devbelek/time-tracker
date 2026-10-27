@@ -52,7 +52,7 @@ def test_add_employee_start_and_stop_timer_then_see_it_in_report(page: Page):
     # отчёт за сегодня обновился сам
     page.locator("#report summary", has_text="Анна Петрова").click()
     expect(page.locator("#report")).to_contain_text("Вёрстка главной")
-    expect(page.locator("#report")).to_contain_text("Записей")
+    expect(page.locator("#report")).to_contain_text("1 запись")
 
 
 def test_empty_report_for_period_without_entries(page: Page):

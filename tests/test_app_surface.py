@@ -62,3 +62,22 @@ def test_settings_have_sensible_defaults(monkeypatch):
     monkeypatch.delenv("TIMETRACKER_DB", raising=False)
     monkeypatch.delenv("TIMETRACKER_LOG_LEVEL", raising=False)
     assert Settings.from_env() == Settings()
+
+
+def test_large_static_files_are_gzipped(client):
+    r = client.get("/vendor/bootstrap/bootstrap.min.css", headers={"Accept-Encoding": "gzip"})
+    assert r.status_code == 200
+    assert r.headers["content-encoding"] == "gzip"
+    assert r.headers["content-type"].startswith("text/css")
+    assert r.headers["content-security-policy"]  # заголовки безопасности не потерялись из-за сжатия
+
+
+def test_small_api_responses_are_not_compressed(client):
+    r = client.get("/health", headers={"Accept-Encoding": "gzip"})
+    assert "content-encoding" not in r.headers
+
+
+def test_fonts_are_served_with_font_mime_type(client):
+    r = client.get("/vendor/fonts/ibm-plex-sans/ibm-plex-sans-cyrillic-400-normal.woff2")
+    assert r.status_code == 200
+    assert r.headers["content-type"] == "font/woff2"
