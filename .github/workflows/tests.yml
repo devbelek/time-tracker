@@ -5,17 +5,76 @@ on:
   pull_request:
 
 jobs:
+  lint-and-types:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v5
+      - uses: actions/setup-python@v6
+        with:
+          python-version: "3.12"
+          cache: pip
+          cache-dependency-path: requirements-dev.txt
+      - run: pip install -r requirements-dev.txt
+      - run: ruff check .
+      - run: ruff format --check .
+      - run: mypy
+
   pytest:
     runs-on: ubuntu-latest
     strategy:
       matrix:
         python: ["3.11", "3.14"]
     steps:
-      - uses: actions/checkout@v4
-      - uses: actions/setup-python@v5
+      - uses: actions/checkout@v5
+      - uses: actions/setup-python@v6
         with:
           python-version: ${{ matrix.python }}
           cache: pip
           cache-dependency-path: requirements-dev.txt
       - run: pip install -r requirements-dev.txt
-      - run: python -m pytest -q
+      # порог покрытия задан в pyproject.toml (fail_under)
+      - run: python -m pytest --cov-report=term-missing:skip-covered | tee coverage.txt
+      - name: Покрытие в сводке запуска
+        if: matrix.python == '3.14'
+        run: |
+          echo '### Покрытие тестами' >> "$GITHUB_STEP_SUMMARY"
+          echo '```' >> "$GITHUB_STEP_SUMMARY"
+          grep -E '^(Name|TOTAL|app/)' coverage.txt >> "$GITHUB_STEP_SUMMARY" || true
+          echo '```' >> "$GITHUB_STEP_SUMMARY"
+
+  frontend-tests:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v5
+      - uses: actions/setup-node@v5
+        with:
+          node-version: "22"
+      - run: npm test
+
+  e2e:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v5
+      - uses: actions/setup-python@v6
+        with:
+          python-version: "3.12"
+          cache: pip
+          cache-dependency-path: requirements-e2e.txt
+      - run: pip install -r requirements-e2e.txt
+      - run: playwright install --with-deps chromium
+      - run: python -m pytest -m e2e --no-cov
+
+  docker:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v5
+      - run: docker build -t time-tracker .
+      - name: Контейнер поднимается и отвечает на /health
+        run: |
+          docker run -d --name app -p 8000:8000 time-tracker
+          for i in $(seq 1 20); do
+            curl -fs http://localhost:8000/health && exit 0
+            sleep 1
+          done
+          docker logs app
+          exit 1
